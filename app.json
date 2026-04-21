@@ -1,30 +1,29 @@
 {
   "expo": {
-    "name": "GestaoEventos",
+    "name": "Eventos ISCAC",
     "slug": "GestaoEventos",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logotipo.jpg",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logotipo.jpg",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1157ed"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.teunome.gestaoeventos"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/logotipo.jpg",
+        "backgroundColor": "#1157ed"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "com.teunome.gestaoeventos"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logotipo.jpg"
     }
   }
 }
