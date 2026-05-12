@@ -95,10 +95,9 @@ export default function HomeScreen() {
       const userId = await AsyncStorage.getItem('userId');
       const hoje = new Date().toISOString().split('T')[0];
 
-      // Busca Paralela de Dados ao Supabase com as regras de BD corrigidas
       const [userRes, eventsRes, inscricoesRes] = await Promise.all([
         userId ? supabase.from('utilizadores').select('nome').eq('id', Number(userId)).single() : Promise.resolve({ data: null }),
-        supabase.from('eventos').select('*').gte('data', hoje).order('data', { ascending: true }).limit(5),
+        supabase.from('eventos').select('*').eq('ativo', true).gte('data', hoje).order('data', { ascending: true }).limit(5),
         userId ? supabase.from('inscricoes').select('estado').eq('id_utilizador', Number(userId)).in('estado', ['Confirmado', 'Pendente', 'Aprovada']) : Promise.resolve({ data: null }),
       ]);
 
@@ -107,6 +106,9 @@ export default function HomeScreen() {
       if (eventsRes.data?.length) {
         setNextEvent(eventsRes.data[0]);
         setEventosSemana(eventsRes.data.slice(1));
+      } else {
+        setNextEvent(null);
+        setEventosSemana([]);
       }
 
       if (inscricoesRes.data) {
@@ -138,12 +140,11 @@ export default function HomeScreen() {
       
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-            <View style={styles.headerIcons}>
-             
-              <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('Perfil')}>
-                <Ionicons name="person-outline" size={20} color="#111" />
-              </TouchableOpacity>
-            </View>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('Perfil')}>
+              <Ionicons name="person-outline" size={20} color="#111" />
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.greetingBlock}>
             <Text style={styles.greetingText}>{getGreeting()},</Text>
@@ -163,8 +164,9 @@ export default function HomeScreen() {
             <ImageBackground source={{ uri: nextEvent.imagem }} style={styles.heroBackground} imageStyle={{ borderRadius: 24 }}>
               <View style={styles.heroOverlay}>
                 <View style={styles.heroTagsRow}>
-                  <View style={styles.heroTagBlue}><Text style={styles.heroTagTextBlue}>PRÓXIMO EVENTO</Text></View>
-                  <View style={styles.heroTagDark}><Text style={styles.heroTagTextDark}>{nextEvent.tipo_evento || 'Conferência'}</Text></View>
+                  <Text style={styles.heroTagBlue}>PRÓXIMO EVENTO</Text>
+                  <Text style={styles.heroTagSeparator}>·</Text>
+                  <Text style={styles.heroTagDark}>{nextEvent.tipo_evento || 'Conferência'}</Text>
                 </View>
                 <Text style={styles.heroTitle} numberOfLines={2}>{nextEvent.titulo}</Text>
                 <CountdownBox timeLeft={timeLeft} />
@@ -212,7 +214,6 @@ const styles = StyleSheet.create({
   header: { backgroundColor: '#fff', paddingHorizontal: 22, paddingTop: 58 },
   headerIcons: { flexDirection: 'row', gap: 10, marginLeft: 'auto' },
   headerIconBtn: { width: 38, height: 36, borderRadius: 19, backgroundColor: '#f5f5f5', justifyContent: 'center', alignItems: 'center' },
-  notificationDot: { position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: 4, backgroundColor: '#1157ed', borderWidth: 1.5, borderColor: '#fff' },
   greetingBlock: { marginBottom: 16 },
   greetingText: { fontSize: 16, color: '#999', fontWeight: '500', marginBottom: 2 },
   greetingName: { fontSize: 30, fontWeight: '800', color: '#111', marginBottom: 6, letterSpacing: -0.5 },
@@ -223,11 +224,10 @@ const styles = StyleSheet.create({
   heroCardContainer: { marginHorizontal: 20, marginTop: 20, marginBottom: 30, borderRadius: 24, elevation: 8, shadowColor: "#0a192f", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 15 },
   heroBackground: { width: '100%', borderRadius: 24 },
   heroOverlay: { padding: 24, backgroundColor: 'rgba(10, 25, 47, 0.85)', borderRadius: 24 },
-  heroTagsRow: { flexDirection: 'row', marginBottom: 16, gap: 10 },
-  heroTagBlue: { backgroundColor: '#1157ed', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  heroTagTextBlue: { color: '#fff', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
-  heroTagDark: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  heroTagTextDark: { color: '#b3c5e5', fontSize: 11, fontWeight: 'bold' },
+  heroTagsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 8 },
+  heroTagBlue: { color: '#4facfe', fontSize: 11, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' },
+  heroTagSeparator: { color: '#4a6080', fontSize: 14, fontWeight: '300' },
+  heroTagDark: { color: '#b3c5e5', fontSize: 12, fontWeight: '600' },
   heroTitle: { fontSize: 22, fontWeight: "800", color: "#ffffff", marginBottom: 15, lineHeight: 32 },
   countdownBox: { backgroundColor: '#0f2442', borderRadius: 16, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#1c365d' },
   countdownLabel: { color: '#8892b0', fontSize: 11, marginBottom: 8, textTransform: 'uppercase', fontWeight: 'bold' },
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   smallCard: { width: 175, backgroundColor: '#fff', borderRadius: 20, marginHorizontal: 7, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 },
   smallCardImageContainer: { height: 110, width: '100%', borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden' },
   smallCardImage: { width: '100%', height: '100%' },
-  smallCardTag: { position: 'absolute', top: 12, left: 12, backgroundColor: '#1157ed', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  smallCardTag: { position: 'absolute', top: 12, left: 12, backgroundColor: '#1157ed', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8},
   smallCardTagText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   dateBadge: { position: 'absolute', top: 85, left: 15, backgroundColor: '#fff', borderRadius: 12, width: 48, height: 48, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 6 },
   dateBadgeDay: { fontSize: 16, fontWeight: '900', color: '#111', lineHeight: 18 },

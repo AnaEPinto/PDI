@@ -28,7 +28,7 @@ export default function LoginScreen() {
     try {
       const { data, error } = await supabase
         .from('utilizadores')
-        .select('id, palavra_passe, permissao')  // só os campos necessários
+        .select('id, palavra_passe, permissao')  
         .eq('email', email.toLowerCase().trim())
         .single();
 

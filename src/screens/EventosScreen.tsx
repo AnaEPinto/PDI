@@ -82,32 +82,35 @@ export default function EventosScreen() {
   const [filtroAtivo, setFiltroAtivo] = useState("Todos");
   const [busca, setBusca] = useState("");
 
-  const carregarDados = async (showRefreshIndicator = false) => {
-  try {
-    if (!showRefreshIndicator) setLoading(true);
-    
-    const hoje = new Date().toISOString().split('T')[0]; 
+  // 1. CORREÇÃO: Envolver a função no useCallback para congelar a sua referência
+  const carregarDados = useCallback(async (showRefreshIndicator = false) => {
+    try {
+      if (!showRefreshIndicator) setLoading(true);
+      
+      const hoje = new Date().toISOString().split('T')[0]; 
 
-    const { data, error } = await supabase
-      .from("eventos")
-      .select("*")
-      .gte("data", hoje) 
-      .order("data", { ascending: true });
+      const { data, error } = await supabase
+        .from("eventos")
+        .select("*")
+        .eq("ativo", true) // ATENÇÃO: Garante que a coluna 'ativo' (booleana) existe mesmo na tua base de dados!
+        .gte("data", hoje) 
+        .order("data", { ascending: true });
 
-    if (error) throw error;
-    setEventos(data || []);
-  } catch (err: any) {
-    console.error("Erro ao carregar:", err.message);
-  } finally {
-    setLoading(false);
-    setRefreshing(false);
-  }
-  };
+      if (error) throw error;
+      setEventos(data || []);
+    } catch (err: any) {
+      console.error("Erro ao carregar:", err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []); // <-- Array vazio significa que esta função não muda a cada renderização
 
+  // 2. CORREÇÃO: Passar o carregarDados como dependência correta
   useFocusEffect(
     useCallback(() => {
       carregarDados();
-    }, [])
+    }, [carregarDados])
   );
 
   const eventosFiltrados = eventos.filter(evento => {
@@ -167,13 +170,17 @@ export default function EventosScreen() {
         showsVerticalScrollIndicator={false}
         refreshing={refreshing} 
         onRefresh={() => { setRefreshing(true); carregarDados(true); }}
-        ListEmptyComponent={() => (
-          loading ? <ActivityIndicator size="large" color="#1157ed" style={{ marginTop: 50 }} /> : 
-          <View style={styles.emptyContainer}>
-            <Ionicons name="ticket-outline" size={50} color="#ccc" />
-            <Text style={styles.emptyText}>Nenhum evento encontrado.</Text>
-          </View>
-        )}
+        /* 3. CORREÇÃO: Passar o elemento diretamente e não como uma função () => */
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator size="large" color="#1157ed" style={{ marginTop: 50 }} />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="ticket-outline" size={50} color="#ccc" />
+              <Text style={styles.emptyText}>Nenhum evento encontrado.</Text>
+            </View>
+          )
+        }
       />
     </View>
   );
@@ -192,7 +199,7 @@ const styles = StyleSheet.create({
   searchBar: { backgroundColor: "#fff", flexDirection: "row", alignItems: "center", padding: 12, marginHorizontal: 15, borderRadius: 10, marginTop: -25, elevation: 5, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
   searchInput: { flex: 1, marginLeft: 10, fontSize: 15 },
   filterBar: { padding: 15, paddingBottom: 10 },
-  filterBtn: { backgroundColor: "white", paddingHorizontal: 16, paddingVertical: 8, marginRight: 10, borderRadius: 20, borderWidth: 1, borderColor: "#eee" },
+  filterBtn: { backgroundColor: "white", paddingHorizontal: 16, paddingVertical: 8, marginRight: 10, borderRadius: 10, borderWidth: 1, borderColor: "#eee" },
   activeFilter: { backgroundColor: "#1157ed", borderColor: "#1157ed" },
   filterText: { color: "#666", fontWeight: "bold", fontSize: 13 },
   listContent: { padding: 15, paddingBottom: 80 },

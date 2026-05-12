@@ -213,6 +213,7 @@ export default function EditEventoAdmin() {
       const { data, error } = await supabase
         .from('eventos')
         .select('*')
+        .eq("ativo", true)
         .order('data', { ascending: false });
 
       if (error) throw error;

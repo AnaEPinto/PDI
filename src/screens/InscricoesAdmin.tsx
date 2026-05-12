@@ -9,7 +9,7 @@ interface Pedido {
   id: number;
   data_inscricao: string;
   utilizadores: { nome: string; email: string };
-  eventos: { id: number; titulo: string; participantes_atual: string; participantes_max: string };
+  eventos: { id: number; titulo: string; participantes_atual: string; participantes_max: string; ativo: boolean };
 }
 
 export default function InscricoesAdminScreen() {
@@ -31,13 +31,16 @@ export default function InscricoesAdminScreen() {
           id, 
           data_inscricao,
           utilizadores (nome, email),
-          eventos (id, titulo, participantes_atual, participantes_max)
+          eventos!inner (id, titulo, participantes_atual, participantes_max, ativo)
         `)
         .eq('estado', 'Pendente')
         .order('id', { ascending: true });
 
       if (error) throw error;
-      setPedidos(data as any || []);
+
+      const filtrados = (data || []).filter(p => (p.eventos as any)?.ativo === true);
+      setPedidos(filtrados as any);
+
     } catch (error) {
       console.error("Erro ao carregar pedidos:", error);
     } finally {
