@@ -13,14 +13,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.teunome.gestaoeventos"
+      "bundleIdentifier": "com.iscac.gestaoeventos"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logotipo.jpg",
         "backgroundColor": "#1157ed"
       },
-      "package": "com.teunome.gestaoeventos"
+      "package": "com.iscac.gestaoeventos",
+      "backgroundColor": "#1157ed"
     },
     "web": {
       "favicon": "./assets/logotipo.jpg"

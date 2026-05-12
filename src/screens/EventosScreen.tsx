@@ -1,29 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, ScrollView, ImageBackground } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { 
+  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, 
+  ActivityIndicator, ScrollView, ImageBackground 
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
-export interface eventos {
+export interface EventoType {
   id: number;
   titulo: string;
   data: string; 
   hora: string; 
   local: string;
   imagem: string;
-  participantes_atual: string;
-  participantes_max: string;   
+  participantes_atual: number; 
+  participantes_max: number;   
   tipo_evento: string;                
   descricao: string;
 }
 
-const EventCard = ({ evento }: { evento: eventos }) => {
+const EventCard = ({ evento }: { evento: EventoType }) => {
   const navigation = useNavigation<any>();
   
   const dataFormatada = evento.data ? evento.data.split("-").reverse().join("/") : "S/D";
-  const inscritos = evento.participantes_atual || "0";
-  const lotacao = evento.participantes_max || "0";
+  
+  const inscritos = evento.participantes_atual || 0;
+  const lotacao = evento.participantes_max || 0;
 
   return (
     <TouchableOpacity 
@@ -34,7 +38,6 @@ const EventCard = ({ evento }: { evento: eventos }) => {
       <View style={styles.imageContainer}>
         {evento.imagem ? (
           <Image 
-            // CORREÇÃO AQUI: Usamos o link direto da base de dados
             source={{ uri: evento.imagem }} 
             style={styles.cardImage} 
             resizeMode="cover" 
@@ -73,32 +76,39 @@ const EventCard = ({ evento }: { evento: eventos }) => {
 };
 
 export default function EventosScreen() {
-  const [eventos, setEventos] = useState<eventos[]>([]);
+  const [eventos, setEventos] = useState<EventoType[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filtroAtivo, setFiltroAtivo] = useState("Todos");
   const [busca, setBusca] = useState("");
 
   const carregarDados = async (showRefreshIndicator = false) => {
-    try {
-      if (!showRefreshIndicator) setLoading(true);
-      
-      const { data, error } = await supabase
-        .from("eventos")
-        .select("*")
-        .order("data", { ascending: true });
+  try {
+    if (!showRefreshIndicator) setLoading(true);
+    
+    const hoje = new Date().toISOString().split('T')[0]; 
 
-      if (error) throw error;
-      setEventos(data || []);
-    } catch (err: any) {
-      console.error("Erro ao carregar:", err.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    const { data, error } = await supabase
+      .from("eventos")
+      .select("*")
+      .gte("data", hoje) 
+      .order("data", { ascending: true });
+
+    if (error) throw error;
+    setEventos(data || []);
+  } catch (err: any) {
+    console.error("Erro ao carregar:", err.message);
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
   };
 
-  useEffect(() => { carregarDados(); }, []);
+  useFocusEffect(
+    useCallback(() => {
+      carregarDados();
+    }, [])
+  );
 
   const eventosFiltrados = eventos.filter(evento => {
     const categoriaBate = filtroAtivo === "Todos" || evento.tipo_evento === filtroAtivo;
@@ -111,19 +121,18 @@ export default function EventosScreen() {
     <View style={styles.container}>
       <StatusBar style="light" backgroundColor="transparent" translucent={true} />
       
-      <View style={styles.header}>
+       <View style={styles.header}>
         <ImageBackground
-          source={require("../../assets/header_home.jpg")}
+          source={require('../../assets/header_home.jpg')}
           style={styles.headerBackground}
         >
           <View style={styles.imageFilter} />
           <View style={styles.overlay}>
-            <View style={styles.titleContainer}>
-              <Text style={styles.headerTitle}>Eventos ISCAC</Text>
-            </View>
+            <Text style={styles.headerSubtitle}>ISCAC</Text>
+            <Text style={styles.headerTitle}>Eventos</Text>
           </View>
         </ImageBackground>
-
+      
         <View style={styles.searchBar}>
           <Ionicons name="search-outline" size={18} color="#999" />
           <TextInput 
@@ -172,19 +181,21 @@ export default function EventosScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
-  header: { backgroundColor: "transparent", paddingBottom: 10 },
-  headerBackground: { width: "100%", height: 160, overflow: "hidden", borderBottomLeftRadius: 15, borderBottomRightRadius: 15 },
-  imageFilter: { ...StyleSheet.absoluteFillObject, backgroundColor: "#00000044" },
-  overlay: { flex: 1, paddingHorizontal: 15, paddingBottom: 30, justifyContent: "flex-end" },
-  titleContainer: { backgroundColor: "#ffffffa8", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, alignSelf: 'flex-start' },
-  headerTitle: { color: "#000", fontSize: 18, fontWeight: "bold" },
+ 
+  header: { backgroundColor: 'transparent' },
+  headerBackground: { width: '100%', height: 170, overflow: 'hidden', borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
+  imageFilter: { ...StyleSheet.absoluteFillObject, backgroundColor: '#00000060' },
+  overlay: { flex: 1, paddingHorizontal: 20, paddingBottom: 20, justifyContent: 'flex-end' },
+  headerSubtitle: { color: '#ffffffaa', fontSize: 12, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 4 },
+  headerTitle: { color: '#fff', fontSize: 22, fontWeight: '800', marginBottom: 8 },
+
   searchBar: { backgroundColor: "#fff", flexDirection: "row", alignItems: "center", padding: 12, marginHorizontal: 15, borderRadius: 10, marginTop: -25, elevation: 5, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
   searchInput: { flex: 1, marginLeft: 10, fontSize: 15 },
   filterBar: { padding: 15, paddingBottom: 10 },
   filterBtn: { backgroundColor: "white", paddingHorizontal: 16, paddingVertical: 8, marginRight: 10, borderRadius: 20, borderWidth: 1, borderColor: "#eee" },
   activeFilter: { backgroundColor: "#1157ed", borderColor: "#1157ed" },
   filterText: { color: "#666", fontWeight: "bold", fontSize: 13 },
-  listContent: { padding: 15 },
+  listContent: { padding: 15, paddingBottom: 80 },
   card: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 20, elevation: 3, overflow: 'hidden' },
   imageContainer: { width: "100%", height: 170 },
   cardImage: { width: '100%', height: '100%' },
